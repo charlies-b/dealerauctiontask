@@ -67,3 +67,5 @@ boxplot(data$price[which(data$colour == 'Black')],
         ylab='price', main = 'price Vs. colour', cex.axis=0.8)
 
 boxplot(data$price_position ~ data$fuel_type)
+
+# 3 features
