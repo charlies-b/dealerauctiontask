@@ -5,7 +5,7 @@ summary(data)
 dim(data)
 nobs <- nrow(data)
 
-# price position
+# 1 price position
 summary(data$price_position) # numeric value centered about 100
 pp_na = sum(is.na(data$price_position))
 pp_na/nobs # 12% missing values
@@ -26,7 +26,7 @@ sum(low, na.rm='TRUE') # 170 high outliers
 boxplot(data$price[which(low)], data$price[which(!low, !high)], data$price[which(high)], xlab='price_position', ylab='price', names=c('low extreme', 'middle', 'high extreme'), main = 'price of price_position outliers')
 
 # 2 price/mileage
-cor.test(data$mileage, data$price) # price and mileage are strongly negatively correleated; -0.65, p-value = 2e-16
+cor.test(data$mileage, data$price) # price and mileage are strongly negatively correlated; -0.65, p-value = 2e-16
 plot(data$mileage, data$price, cex=0.1, ylab='price', xlab='mileage',main='price Vs. mileage')
 
 # 3 price/categorical relationships
@@ -68,4 +68,26 @@ boxplot(data$price[which(data$colour == 'Black')],
 
 boxplot(data$price_position ~ data$fuel_type)
 
-# 3 features
+# 3 price/price_position
+boxplot(data$price)
+hist(data$price, 100) # price very negatively skewed, what's the price position of high outliers?
+iqr <- IQR(data$price, na.rm=TRUE)
+q3 <-  quantile(data$price, 0.75,na.rm=TRUE)
+high <- data$price > q3 + 1.5*iqr # outlier - outside of IQR ± 1.5*IQR
+sum(high, na.rm=T) # 618 high price outliers
+expensive <- data$price_position[which(high)]
+normal <- data$price_position[which(!high)]
+boxplot(normal, expensive)
+
+# features
+features <- data[15:24]
+summary(features) # features are binary 
+barplot(colMeans(features), names = c(1:10), main='feature=1 proportion')
+f4ORf8ORf10 <- data$feature_4 ==1 | data$feature_4 ==1| data$feature_10==1
+rare_features <- data$price_position[which(f4ORf8ORf10)]
+common_features <- data$price_position[which(!f4ORf8ORf10)]
+boxplot(rare_features, common_features)
+
+model <- lm(data$price_position ~ data$feature_1+data$feature_2+data$feature_3+data$feature_4+data$feature_5+data$feature_6+data$feature_7+data$feature_8+data$feature_9+data$feature_10)
+plot(model)
+summary(model)
