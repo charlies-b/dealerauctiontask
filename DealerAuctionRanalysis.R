@@ -11,7 +11,7 @@ pp_na = sum(is.na(data$price_position))
 pp_na/nobs # 12% missing values
 boxplot(data$price_position, main='price position') # narrow distribution, lots of outliers 
 hist(data$price_position,100, main='price position', xlab='price position') # normally distributed?
-qqnorm(data$price_position, main='normal QQ - price_position ')
+qqnorm(data$price_position, main='normal QQ (price position) ')
 qqline(data$price_position) # more outliers than expected for normally distributed data; center normally distributed, what about the outliers?
 
 ## price_position/price
@@ -24,8 +24,10 @@ q1 <- quantile(data$price_position, 0.25,na.rm=TRUE)
 iqr <- IQR(data$price_position, na.rm=TRUE) 
 high <- data$price_position > q3 + 1.5*iqr # outlier - outside of IQR ± 1.5*IQR
 low <- data$price_position < q1 - 1.5*iqr
-sum(high, na.rm='TRUE')/nobs # 219 high outliers 
-sum(low, na.rm='TRUE')/nobs # 170 high outliers 
+data$price_position_outlier <- high|low
+sum(data$price_position_outlier, na.rm=T)
+sum(high, na.rm=T)/nobs # 219 high outliers 
+sum(low, na.rm=T)/nobs # 170 high outliers 
 boxplot(data$price[which(low)], 
         data$price[which(!(low|high))], 
         data$price[which(high)],
@@ -93,9 +95,10 @@ wilcox.test(normal, expensive) # p-value = 4.647e-08
 ## features
 features <- data[15:24]
 summary(features) # features are binary 
-barplot(colMeans(features), names = c(1:10), main='feature proportion', xlab='feature')
+barplot(colMeans(features), names = c(1:10), main='feature proportion', xlab='feature', ylim = c(0,1)) # features 4, 8 and 10 are 'rare'
 data$rare_feature <- data$feature_4 ==1 | data$feature_8 ==1| data$feature_10==1
 sum(data$rare_feature, na.rm=T)/nobs # 18% 'rare' features
+# rare Vs. common features
 rare <- data$price_position[which(data$rare_feature)]
 common <- data$price_position[which(!(data$rare_feature))]
 boxplot(rare, common, 
@@ -104,3 +107,35 @@ boxplot(rare, common,
         outline = F,
         ylab = 'price position')
 wilcox.test(rare, common) # p-value = 8.472e-08
+# total features
+data$feature_total <- rowSums(features)
+boxplot(data$price_position ~ data$feature_total, outline=F,
+        ylab = 'price position', xlab = 'total features',
+        main = 'price position Vs. total features')
+# independent features
+for (i in colnames(features)){
+  print(i)
+  print(wilcox.test(data$price_position[which(data[[i]]==0)], data$price_position[which(data[[i]]==1)]))
+} # feature 4, 6, 7
+colnames(features)
+print(wilcox.test(data$price_position[which(data[['feature_10']]==0)], data$price_position[which(data[['feature_10']]==1)]))
+control <- !(data$feature_4==1|data$feature_6==1|data$feature_7==1)
+data$price_position[which(control)]
+boxplot(data$price_position[which(data$feature_1==1)],
+        data$price_position[which(data$feature_2==1)],
+        data$price_position[which(data$feature_3==1)],
+        data$price_position[which(data$feature_4==1)],
+        data$price_position[which(data$feature_5==1)],
+        data$price_position[which(data$feature_6==1)],
+        data$price_position[which(data$feature_7==1)],
+        data$price_position[which(data$feature_8==1)],
+        data$price_position[which(data$feature_9==1)],
+        data$price_position[which(data$feature_10==1)],
+        outline=F,
+        ylab = 'price position', xlab = 'feature',
+        main = 'price position Vs. feature',
+        names = c(1:10)
+)
+# outlier features
+outlier_features <- subset(data, data$price_position_outlier==T)[15:24]
+barplot(colMeans(outlier_features), names = c(1:10), main='feature proportion', xlab='feature', ylim=c(0,1)) # not too dissimilar
