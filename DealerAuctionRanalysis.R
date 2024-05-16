@@ -5,31 +5,42 @@ summary(data)
 dim(data)
 nobs <- nrow(data)
 
-# 1 price position
+## price position
 summary(data$price_position) # numeric value centered about 100
 pp_na = sum(is.na(data$price_position))
 pp_na/nobs # 12% missing values
-boxplot(data$price_position, main='price_position') # narrow distribution, lots of outliers 
-hist(data$price_position,100, main='price_position', xlab='price_position') # normally distributed?
+boxplot(data$price_position, main='price position') # narrow distribution, lots of outliers 
+hist(data$price_position,100, main='price position', xlab='price position') # normally distributed?
 qqnorm(data$price_position, main='normal QQ - price_position ')
 qqline(data$price_position) # more outliers than expected for normally distributed data; center normally distributed, what about the outliers?
 
-# 1 price_position/price
+## price_position/price
+plot(data$price, data$price_position, 
+     cex=0.25, main='price Vs. price position', xlab='price', ylab='price position',
+     xlim=c(0,125000)) # narrowing distribution 
 cor.test(data$price, data$price_position) # price position is not correlated to price
 q3 <-  quantile(data$price_position, 0.75,na.rm=TRUE)
 q1 <- quantile(data$price_position, 0.25,na.rm=TRUE)
 iqr <- IQR(data$price_position, na.rm=TRUE) 
 high <- data$price_position > q3 + 1.5*iqr # outlier - outside of IQR ± 1.5*IQR
 low <- data$price_position < q1 - 1.5*iqr
-sum(high, na.rm='TRUE') # 219 high outliers 
-sum(low, na.rm='TRUE') # 170 high outliers 
-boxplot(data$price[which(low)], data$price[which(!low, !high)], data$price[which(high)], xlab='price_position', ylab='price', names=c('low extreme', 'middle', 'high extreme'), main = 'price of price_position outliers')
+sum(high, na.rm='TRUE')/nobs # 219 high outliers 
+sum(low, na.rm='TRUE')/nobs # 170 high outliers 
+boxplot(data$price[which(low)], 
+        data$price[which(!(low|high))], 
+        data$price[which(high)],
+        outline = F,
+        xlab='price position', ylab='price', 
+        names=c('low extreme (2%)', 'middle (96%)', 'high extreme (2%)'), 
+        main = 'price of extreme price positions' )
+wilcox.test(data$price[which(!(low|high))],data$price[which(high)]) # p-value = 0.6221
+wilcox.test(data$price[which(!(low|high))],data$price[which(low)]) # p-value < 2.2e-16
 
-# 2 price/mileage
+## price/mileage
 cor.test(data$mileage, data$price) # price and mileage are strongly negatively correlated; -0.65, p-value = 2e-16
 plot(data$mileage, data$price, cex=0.1, ylab='price', xlab='mileage',main='price Vs. mileage')
 
-# 3 price/categorical relationships
+## other price relationships
 table(data$body_type)
 table(data$fuel_type)
 prop.table(table(data$fuel_type)) # 44% Diesel, 36% Petrol
@@ -37,25 +48,24 @@ prop.table(table(data$fuel_type)) # 44% Diesel, 36% Petrol
 table(data$transmission) # 81% Automatic, 19% Manual
 prop.table(table(data$year))
 prop.table(table(data$colour)) # 27% Black, 20% Blue, 20% Grey, 19% White
-
-# boxplot(data$price ~ data$area)
-# boxplot(data$price ~ data$body_type,las=2, ylab='price', xlab ='', cex.axis = 0.75, main='price Vs. body_type')
-# boxplot(data$price ~ data$fuel_type, subset = data$fuel_type  %in% c('Diesel', 'Petrol', 'Electric'), ylab='price', xlab = '', main = 'price Vs. fuel_type')
-boxplot(data$price ~ data$year, ylab='price', xlab='year', main = 'price Vs. year')
-
-electricORhybrid <- !(data$fuel_type %in% c('Petrol', 'Diesel','Unlisted'))
+# body_type
+# boxplot(data$price ~ data$body_type,las=2, ylab='price', xlab ='', cex.axis = 0.75, main='price Vs. body_type') # not very interesting
+# fuel_type
+electricORhybrid <- !(data$fuel_type %in% c('Petrol', 'Diesel','Unlisted')) 
 sum(electricORhybrid, na.rm=T)/nobs # 20% listings electric/hybrid
 boxplot(data$price[which(data$fuel_type == 'Diesel')],
         data$price[which(data$fuel_type == 'Petrol')],
         data$price[which(electricORhybrid)],
         names = c('Diesel (44%)', 'Petrol (36%)', 'Electric/Hybrid (20%)'), 
-        ylab='price', main = 'price Vs. fuel_type')
-
+        ylab='price', main = 'price Vs. fuel_type') # shows price Electric/Hybrid > Petrol > Diesel
+# transmission
 boxplot(data$price ~ data$transmission, 
         subset = data$transmission %in% c('Automatic', 'Manual'),
         names = c('Automatic (81%)', 'Manual (19%)'),
-        ylab='price', xlab='', main='price Vs. transmission')
-
+        ylab='price', xlab='', main='price Vs. transmission') # shows price transmission > manual
+# year
+boxplot(data$price ~ data$year, ylab='price', xlab='year', main = 'price Vs. year') # shows price of listing is strongly correlated with price, until classic
+# colour
 blackORblueORgreyORwhite <- data$colour %in% c('Black', 'Blue', 'Grey', 'White')
 sum(!blackORblueORgreyORwhite, na.rm=T)/nobs # 14% listings other colour
 boxplot(data$price[which(data$colour == 'Black')],
@@ -64,30 +74,33 @@ boxplot(data$price[which(data$colour == 'Black')],
         data$price[which(data$colour == 'White')], 
         data$price[which(!blackORblueORgreyORwhite)], 
         names = c('Black (27%)', 'Blue (20%)', 'Grey (20%)', 'White (19%)', 'Other (14%)'), 
-        ylab='price', main = 'price Vs. colour', cex.axis=0.8)
+        ylab='price', main = 'price Vs. colour', cex.axis=0.8) # indicates colour doesn't have a strong influence on price
 
-boxplot(data$price_position ~ data$fuel_type)
-
-# 3 price/price_position
-boxplot(data$price)
-hist(data$price, 100) # price very negatively skewed, what's the price position of high outliers?
+## price/price_position
+boxplot(data$price, main='price')
+hist(data$price, 100, main='price', xlab='price') # price very negatively skewed, what's the price position of high outliers?
 iqr <- IQR(data$price, na.rm=TRUE)
 q3 <-  quantile(data$price, 0.75,na.rm=TRUE)
 high <- data$price > q3 + 1.5*iqr # outlier - outside of IQR ± 1.5*IQR
-sum(high, na.rm=T) # 618 high price outliers
+sum(high, na.rm=T)/nobs # 6% high price outliers
 expensive <- data$price_position[which(high)]
 normal <- data$price_position[which(!high)]
-boxplot(normal, expensive)
+boxplot(normal, expensive, names = c('normal (94%)', 'expensive (6%)'), ylab='price position', outline = F, xlab = 'price', main='expensive price Vs. price position')  # expensive outliers have a higher price position on average
+wilcox.test(normal, expensive) # p-value = 4.647e-08
+# high price position - people are willing to pay the price?
+# very expensive cars tend to be the ones people are willing to pay the price for
 
-# features
+## features
 features <- data[15:24]
 summary(features) # features are binary 
-barplot(colMeans(features), names = c(1:10), main='feature=1 proportion')
-f4ORf8ORf10 <- data$feature_4 ==1 | data$feature_4 ==1| data$feature_10==1
-rare_features <- data$price_position[which(f4ORf8ORf10)]
-common_features <- data$price_position[which(!f4ORf8ORf10)]
-boxplot(rare_features, common_features)
-
-model <- lm(data$price_position ~ data$feature_1+data$feature_2+data$feature_3+data$feature_4+data$feature_5+data$feature_6+data$feature_7+data$feature_8+data$feature_9+data$feature_10)
-plot(model)
-summary(model)
+barplot(colMeans(features), names = c(1:10), main='feature proportion', xlab='feature')
+data$rare_feature <- data$feature_4 ==1 | data$feature_8 ==1| data$feature_10==1
+sum(data$rare_feature, na.rm=T)/nobs # 18% 'rare' features
+rare <- data$price_position[which(data$rare_feature)]
+common <- data$price_position[which(!(data$rare_feature))]
+boxplot(rare, common, 
+        names=c('rare features (14%)', 'common features (86%)'), 
+        main='rare/common features Vs. price position',
+        outline = F,
+        ylab = 'price position')
+wilcox.test(rare, common) # p-value = 8.472e-08
