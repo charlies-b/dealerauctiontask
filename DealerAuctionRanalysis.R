@@ -55,7 +55,7 @@ prop.table(table(data$colour)) # 27% Black, 20% Blue, 20% Grey, 19% White
 # body_type
 boxplot(data$price ~ data$body_type,
         subset = data$body_type != 'Unlisted',
-        las=2, ylab='price', xlab ='', cex.axis = 0.75, outline=F,
+        las=1, ylab='price', xlab ='', cex.axis = 0.75, outline=F,
         main='price Vs. body type') # not very interesting
 # fuel_type
 electricORhybrid <- !(data$fuel_type %in% c('Petrol', 'Diesel','Unlisted')) 
